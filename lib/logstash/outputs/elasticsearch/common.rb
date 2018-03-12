@@ -300,23 +300,22 @@ module LogStash; module Outputs; class ElasticSearch;
     # But using 1.7.x ES and bulk API, that sometimes return 500 error.
     # So deal with DLQ flow.
     def has_illegal_argument_exception_but_error_status(response) 
-      @logger.debug("[has_illegal_argument_exception_but_error_status] START", :response => response)
-
       if response.nil?
-        false
+        return false
       end
 
       status_code = response["status"]
 
-      if !status_code.nil? && status_code == "500"
+      if !status_code.nil? && status_code == 500
         error = response["error"]
-        if !error.nil? && error.is_a?(String) && error.include?("IllegalArgumentException")
+        
+        if (!error.nil? && error.is_a?(String) && error.include?("IllegalArgumentException"))
           @logger.error("ElasticSearch return wrong response. ", :response => response)
-          true
+          return true
         end
       end
 
-      false
+      return false
     end  
   end
 end; end; end
