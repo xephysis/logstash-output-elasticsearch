@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name            = 'logstash-output-elasticsearch'
-  s.version         = '7.3.7'
+  s.version         = '7.3.7.1'
   s.licenses        = ['apache-2.0']
   s.summary         = "Logstash Output to Elasticsearch"
   s.description     = "This gem is a Logstash plugin required to be installed on top of the Logstash core pipeline using $LS_HOME/bin/logstash-plugin install gemname. This gem is not a stand-alone program"
@@ -32,7 +32,8 @@ Gem::Specification.new do |s|
     s.add_runtime_dependency "manticore", '>= 0.5.4', '< 1.0.0'
   end
 
-  s.add_development_dependency 'logstash-devutils'
+  #s.add_development_dependency 'logstash-devutils'
+  s.add_development_dependency "logstash-devutils", "~> 1.3", ">= 1.3.1"
   s.add_development_dependency 'flores'
   # Still used in some specs, we should remove this ASAP
   s.add_development_dependency 'elasticsearch'

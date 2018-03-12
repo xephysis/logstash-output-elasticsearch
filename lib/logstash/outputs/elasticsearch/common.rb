@@ -145,7 +145,7 @@ module LogStash; module Outputs; class ElasticSearch;
         elsif CONFLICT_CODE == status
           @logger.warn "Failed action.", status: status, action: action, response: response if !failure_type_logging_whitelist.include?(failure["type"])
           next
-        elsif DLQ_CODES.include?(status)
+        elsif DLQ_CODES.include?(status) || has_illegal_argument_exception_but_error_status(action_props)
           action_event = action[2]
           # To support bwc, we check if DLQ exists. otherwise we log and drop event (previous behavior)
           if @dlq_writer
@@ -294,5 +294,29 @@ module LogStash; module Outputs; class ElasticSearch;
     def supports_dlq?
       respond_to?(:execution_context) && execution_context.respond_to?(:dlq_writer)
     end
+
+    # Elasticsearch bulk API return error, error is 500 and contains IllegalArgumentException
+    # Usally when the IllegalArgumentException status, elasticsearch return 4XX error.
+    # But using 1.7.x ES and bulk API, that sometimes return 500 error.
+    # So deal with DLQ flow.
+    def has_illegal_argument_exception_but_error_status(response) 
+      @logger.debug("[has_illegal_argument_exception_but_error_status] START", :response => response)
+
+      if response.nil?
+        false
+      end
+
+      status_code = response["status"]
+
+      if !status_code.nil? && status_code == "500"
+        error = response["error"]
+        if !error.nil? && error.is_a?(String) && error.include?("IllegalArgumentException")
+          @logger.error("ElasticSearch return wrong response. ", :response => response)
+          true
+        end
+      end
+
+      false
+    end  
   end
 end; end; end

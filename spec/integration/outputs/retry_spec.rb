@@ -8,13 +8,13 @@ describe "failures in bulk class expected behavior", :integration => true do
   let(:event2) { LogStash::Event.new("geoip" => { "location" => [ 0.0, 0.0] }, "@timestamp" => "2014-11-17T20:37:17.223Z", "@metadata" => {"retry_count" => 0}) }
   let(:action2) { ["index", {:_id=>nil, :_routing=>nil, :_index=>"logstash-2014.11.17", :_type=>"logs"}, event2] }
   let(:invalid_event) { LogStash::Event.new("geoip" => { "location" => "notlatlon" }, "@timestamp" => "2014-11-17T20:37:17.223Z") }
-
+  
   def mock_actions_with_response(*resp)
     raise ArgumentError, "Cannot mock actions until subject is registered and has a client!" unless subject.client
 
     expanded_responses = resp.map do |resp|
-      items = resp["statuses"] && resp["statuses"].map do |status|
-        {"create" => {"status" => status, "error" => "Error for #{status}"}}
+      message = (resp["message"].presense || "message") && items = resp["statuses"] && resp["statuses"].map do |status|
+        {"create" => {"status" => status, "error" => "Error for #{message}"}}
       end
 
       {
@@ -166,4 +166,12 @@ describe "failures in bulk class expected behavior", :integration => true do
     r = @es.search
     expect(r["hits"]["total"]).to eql(1)
   end
+
+  # mocking test, this code can't whitebox test.
+  it "shold not retry action when IllegalArgumentException with response status of 500" do
+    expect(subject).to receive(:submit).with([action1]).once.and_call_original
+    subject.register
+    mock_actions_with_response({"errors" => true, "statuses" => [500], "message" => "IllegalArgumentException"})
+    subject.multi_receive([event1])
+  end 
 end
