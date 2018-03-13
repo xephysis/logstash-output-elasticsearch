@@ -309,7 +309,7 @@ module LogStash; module Outputs; class ElasticSearch;
       if !status_code.nil? && status_code == 500
         error = response["error"]
         
-        if (!error.nil? && error.is_a?(String) && error.include?("IllegalArgumentException"))
+        if !error.nil? && error.is_a?(String) && error.include?("IllegalArgumentException")
           @logger.error("ElasticSearch return wrong response. ", :response => response)
           return true
         end
